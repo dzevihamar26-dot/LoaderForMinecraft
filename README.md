@@ -1,92 +1,146 @@
 # Minecraft Client Loader
 
-Open-source loader for Minecraft clients built with Python and PyQt6.
+Кроссплатформенный консольный лоадер/установщик для Minecraft клиента, написанный на C++17.
 
-## Features
+## Возможности
 
-- **Java Version Selection**: Choose between Java 8, 11, 17, or 21
-- **Custom Installation Directory**: Select where to install the client (defaults to C:/MinecraftClient if skipped)
-- **Skip Option**: Skip setup steps if needed
-- **Bilingual Interface**: Switch between Russian (RU) and English (EN)
-- **Dark Theme**: Modern dark interface with black and soft dark green colors
-- **Progress Tracking**: Visual progress bar showing download and extraction status
-- **Automatic Download & Extraction**: Downloads client archive and extracts it automatically
-- **Client Launch**: Launches the JAR file after installation
+- ✅ Кроссплатформенность (Windows, Linux, macOS)
+- ✅ Автоматическая загрузка и распаковка клиента
+- ✅ Проверка и поиск установленной Java
+- ✅ Гибкая настройка через JSON и .env файлы
+- ✅ Прогресс-бары загрузки и распаковки
+- ✅ Цветной вывод в консоль
+- ✅ Сохранение настроек между запусками
 
-## Requirements
+## Требования
 
-- Python 3.8+
-- PyQt6
-- python-dotenv
+### Для сборки
+- CMake 3.15+
+- Компилятор с поддержкой C++17 (GCC 8+, Clang 7+, MSVC 2019+)
+- Интернет-соединение (для загрузки зависимостей через FetchContent)
 
-## Installation
+### Для запуска
+- Java 8, 11, 17 или 21 (в зависимости от выбранной версии)
 
-1. Clone or download this repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Сборка
 
-3. Configure the loader by editing the `.env` file:
-   ```env
-   # URL to download the client archive (ZIP file)
-   CLIENT_DOWNLOAD_URL=https://example.com/client.zip
-   
-   # Name of the JAR file inside the archive
-   CLIENT_JAR_NAME=client.jar
-   
-   # Default installation directory
-   DEFAULT_INSTALL_DIR=C:/MinecraftClient
-   
-   # Client display name
-   CLIENT_DISPLAY_NAME=My Minecraft Client
-   ```
-
-## Usage
-
-Run the loader:
 ```bash
-python minecraft_loader.py
+# Создание директории сборки
+mkdir build && cd build
+
+# Конфигурация проекта
+cmake ..
+
+# Сборка
+cmake --build . --config Release
+
+# Установка (опционально)
+cmake --install . --prefix /usr/local
 ```
 
-### First Run
+### Опции сборки
 
-1. **Select Java Version**: Choose from Java 8, 11, 17, or 21
-2. **Select Installation Directory**: Click "Browse..." to choose a location, or click "Skip" to use the default
-3. **Main Page**: After setup, you'll see the main page with:
-   - Client name displayed in bold white text
-   - Rounded "Launch" button
-   - Progress bar showing download/installation status
-   - Language selector in the top-right corner (RU/EN)
+| Опция | Описание | По умолчанию |
+|-------|----------|--------------|
+| `BUILD_STATIC` | Статическая линковка (особенно важно для Windows) | ON |
+| `USE_SYSTEM_CURL` | Использовать системную libcurl вместо загрузки | OFF |
+| `USE_SYSTEM_NLOHMANN_JSON` | Использовать системный nlohmann/json | OFF |
 
-### Configuration
+Пример сборки со статической линковкой:
 
-All configuration is done through the `.env` file:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `CLIENT_DOWNLOAD_URL` | Direct link to the client ZIP archive | `https://example.com/client.zip` |
-| `CLIENT_JAR_NAME` | Path to the JAR file inside the archive | `client.jar` or `folder/client.jar` |
-| `DEFAULT_INSTALL_DIR` | Default installation path if user skips selection | `C:/MinecraftClient` |
-| `CLIENT_DISPLAY_NAME` | Name displayed on the main page | `My Minecraft Client` |
-
-## Project Structure
-
-```
-minecraft-loader/
-├── minecraft_loader.py    # Main application code
-├── .env                   # Configuration file (edit this!)
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
+```bash
+cmake .. -DBUILD_STATIC=ON
 ```
 
-## License
+## Использование
 
-MIT License - Free and Open Source
+### Первый запуск
 
-## Notes
+1. Скопируйте `.env.example` в `.env`
+2. Отредактируйте `.env`, указав актуальный URL для скачивания клиента
+3. Запустите исполняемый файл
 
-- The loader downloads the archive from the specified URL and extracts it to the selected directory
-- If no directory is selected, files are installed to the default directory (C:/MinecraftClient on Windows)
-- The JAR file path inside the archive should be specified relative to the archive root
-- Java version selection currently maps to the system's `java` command (can be extended to use specific Java installations)
+При первом запуске лоадер предложит:
+- Выбрать версию Java (8, 11, 17, 21)
+- Указать директорию для установки (по умолчанию `~/mc_client` или `C:\mc_client`)
+- Настроить выделение памяти (по умолчанию 8G)
+
+### Повторный запуск
+
+При повторном запуске лоадер предложит использовать сохранённые настройки из `settings.json`.
+
+### Структура settings.json
+
+```json
+{
+  "InstallDirectory": "/home/user/mc_client",
+  "JavaVersion": "17",
+  "LastUsedJarPath": "client.jar",
+  "MaxRamAllocation": "8G"
+}
+```
+
+## Архитектура
+
+### Модули
+
+| Модуль | Описание |
+|--------|----------|
+| `Logger` | Логирование с цветным выводом и прогресс-барами |
+| `ConfigManager` | Управление настройками (JSON и .env) |
+| `Downloader` | Загрузка файлов через libcurl |
+| `Extractor` | Распаковка ZIP архивов через miniz |
+| `JavaFinder` | Поиск и проверка Java в системе |
+| `Launcher` | Запуск процесса Minecraft |
+| `Utils` | Вспомогательные функции (работа с путями, файлами) |
+
+### Зависимости
+
+- **nlohmann/json** - парсинг JSON
+- **libcurl** - HTTP загрузка
+- **miniz** - работа с ZIP архивами
+
+Все зависимости автоматически загружаются при сборке через CMake FetchContent.
+
+## Лицензия
+
+MIT License
+
+## Вклад в проект
+
+1. Fork репозитория
+2. Создайте ветку (`git checkout -b feature/amazing-feature`)
+3. Commit изменений (`git commit -m 'Add amazing feature'`)
+4. Push в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
+
+## Решение проблем
+
+### Ошибка компиляции на Windows
+
+Убедитесь, что используется статическая линковка runtime:
+```bash
+cmake .. -DBUILD_STATIC=ON
+```
+
+### Не найдена Java
+
+Лоадер ищет Java в стандартных путях:
+- Переменная окружения `JAVA_HOME`
+- Системный PATH
+- Стандартные директории (`/usr/lib/jvm`, `C:\Program Files\Java`)
+
+### Ошибка загрузки
+
+Проверьте:
+- Корректность URL в `.env`
+- Доступность сервера
+- Наличие SSL сертификатов (для HTTPS)
+
+## Поддерживаемые платформы
+
+| Платформа | Статус |
+|-----------|--------|
+| Windows 10/11 | ✅ Полная поддержка |
+| Linux (Ubuntu, Debian, Fedora, etc.) | ✅ Полная поддержка |
+| macOS 10.15+ | ✅ Полная поддержка |
